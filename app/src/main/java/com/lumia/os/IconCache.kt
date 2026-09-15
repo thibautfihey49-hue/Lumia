@@ -1,12 +1,11 @@
 package com.lumia.os
 
-import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.util.LruCache
 
 object IconCache {
-    private val cache = LruCache<String, Drawable>(150)
-    fun get(pm: PackageManager, packageName: String, load: () -> Drawable): Drawable {
-        return cache.get(packageName) ?: load().also { cache.put(packageName, it) }
-    }
+    // 60 icônes max = ~8MB RAM max. Xiaomi en garde 250 = 80MB
+    private val cache = LruCache<String, Drawable>(60)
+    fun get(key: String, load: () -> Drawable): Drawable = cache.get(key) ?: load().also { cache.put(key, it) }
+    fun clear() = cache.evictAll()
 }
