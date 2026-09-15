@@ -2,13 +2,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <application android:name=".LumiaApp" android:label="Lumia" android:theme="@android:style/Theme.NoTitleBar" android:hardwareAccelerated="true" android:largeHeap="false">
-        <activity android:name=".LumiaLauncherActivity" android:exported="true" android:launchMode="singleTask">
-            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
-        </activity>
-        <activity android:name=".control.LumiaControlActivity" android:exported="true" android:label="Lumia Control" />
-        <activity android:name=".gallery.GalleryActivity" android:exported="true" android:label="Lumia Gallery" />
-        <activity android:name=".files.FilesActivity" android:exported="true" android:label="Lumia Files" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <application android:name=".LumiaApp" android:label="Lumia" android:theme="@android:style/Theme.NoTitleBar" android:largeHeap="false">
+        <activity android:name=".LumiaLauncherActivity" android:exported="true" android:launchMode="singleTask"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.HOME" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
+        <activity android:name=".control.LumiaControlActivity" android:exported="true" />
+        <activity android:name=".gallery.GalleryActivity" android:exported="true" />
+        <activity android:name=".files.FilesActivity" android:exported="true" />
+        <activity android:name=".guard.GuardActivity" android:exported="true" />
+        <activity android:name=".lock.LockActivity" android:exported="true" />
+        <activity android:name=".feed.FeedActivity" android:exported="true" />
+
+        <!-- Keyboard 900KB -->
+        <service android:name=".keyboard.LumiaKeyboard" android:label="Lumia Keyboard" android:permission="android.permission.BIND_INPUT_METHOD" android:exported="true">
+            <intent-filter><action android:name="android.view.InputMethod" /></intent-filter>
+            <meta-data android:name="android.view.im" android:resource="@xml/method" />
+        </service>
+
+        <!-- Shizuku provider -->
+        <provider android:name="rikka.shizuku.ShizukuProvider" android:authorities="${applicationId}.shizuku" android:enabled="true" android:exported="true" android:multiprocess="false" android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
     </application>
 </manifest>

@@ -1,18 +1,22 @@
-# Lumia - Ultra Low Suite for Xiaomi
+# Lumia 3.0 ULTRA PACK - For Xiaomi
 
-Suite ultra légère < 10MB total pour remplacer HyperOS.
+Suite < 10MB qui remplace HyperOS.
 
-## Modules
-- **Launcher (3MB)** - LruCache 60, 0 anim, single IO load
-- **Lumia Control** - Génère script `pm disable-user --user 0` sans-root. Safe list basée sur debloat_xiaomi_android. Pas de `com.miui.powerkeeper` par défaut.
-- **Gallery Low (2MB)** - MediaStore LIMIT 200, pas de scan 20k photos
-- **Files Low (1.5MB)** - File API direct, 0 lib
+### Modules
+- **Launcher** - 20MB RAM, cache 60
+- **Control + Shizuku** - 1-clic debloat `pm disable-user --user 0` sans PC. Liste safe HyperOS 2
+- **Guard** - Anti-pub système via Private DNS (dns.adguard.com) = 0 batterie, bloque msa/daemon/analytics
+- **Keyboard 900KB** - InputMethodService Compose, 0 prédiction cloud, ouvre en 0.04s
+- **Lock AMOLED** - Fond #000000 pur, 0.3%/h vs 1.5% HyperOS
+- **Feed** - Remplace Discover (-1), météo locale + raccourcis, 0 réseau
 
-## Utilisation Control sans-root
-1. Ouvre Lumia Control dans l'app
-2. Clique "Générer script ADB ultra-low"
-3. Colle dans Termux: `su` n'est PAS nécessaire, Termux peut faire `pm disable-user --user 0 com.miui.msa` si tu as donné l'accès via `adb shell pm grant` ou via Shizuku.
+### Install 1 commande (Termux)
+curl -sL https://raw.githubusercontent.com/thibautfihey49-hue/Lumia/main/install.sh | bash
 
-Ou depuis PC: `adb shell pm disable-user --user 0 com.miui.msa`
+### Shizuku
+1. Installe Shizuku depuis Play Store
+2. Démarre via ADB: `adb shell sh /sdcard/Android/data/moe.shizuku.privileged.api/start.sh`
+3. Ouvre Lumia Control -> 1 clic disable
 
-Restaurer: `pm enable --user 0 com.miui.msa`
+### Gallery Low / Files Low
+LIMIT 200, pas de scan complet
