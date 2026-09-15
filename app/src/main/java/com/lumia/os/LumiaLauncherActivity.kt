@@ -5,6 +5,7 @@ import android.content.pm.ResolveInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -24,13 +25,12 @@ import kotlinx.coroutines.withContext
 class LumiaLauncherActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Supprime l'animation qui crashait sur certains Xiaomi
         try { overridePendingTransition(0,0) } catch(_: Exception) {}
         setContent { MaterialTheme { LumiaHomeUltra() } }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LumiaHomeUltra() {
     val context = LocalContext.current
@@ -68,27 +68,31 @@ fun LumiaHomeUltra() {
                     withContext(Dispatchers.IO) {
                         try {
                             val drawable = IconCache.get(info.activityInfo.packageName) { info.loadIcon(pm) }
-                            val bmp = drawable.toBitmap(96, 96).asImageBitmap()
-                            iconBitmap = bmp
+                            iconBitmap = drawable.toBitmap(96, 96).asImageBitmap()
                         } catch(_: Exception) {}
                     }
                 }
 
-                Column(Modifier.padding(6.dp).combinedClickable(onClick = {
-                    try {
-                        val launch = pm.getLaunchIntentForPackage(info.activityInfo.packageName)
-                        if (launch != null) context.startActivity(launch) else {
-                            val intent = Intent(Intent.ACTION_MAIN).setClassName(info.activityInfo.packageName, info.activityInfo.name)
-                            context.startActivity(intent)
-                        }
-                    } catch(_: Exception) {}
-                }, onLongClick = {
-                    try {
-                        val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                        intent.data = android.net.Uri.parse("package:${info.activityInfo.packageName}")
-                        context.startActivity(intent)
-                    } catch(_: Exception) {}
-                }), modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier
+                        .padding(6.dp)
+                        .fillMaxWidth()
+                        .combinedClickable(
+                            onClick = {
+                                try {
+                                    val launch = pm.getLaunchIntentForPackage(info.activityInfo.packageName)
+                                    if (launch != null) context.startActivity(launch)
+                                } catch(_: Exception) {}
+                            },
+                            onLongClick = {
+                                try {
+                                    val i = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                    i.data = android.net.Uri.parse("package:${info.activityInfo.packageName}")
+                                    context.startActivity(i)
+                                } catch(_: Exception) {}
+                            }
+                        )
+                ) {
                     if (iconBitmap != null) {
                         Image(bitmap = iconBitmap!!, contentDescription = null, modifier = Modifier.size(48.dp))
                     } else {
