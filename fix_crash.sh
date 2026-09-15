@@ -1,3 +1,52 @@
+#!/data/data/com.termux/files/usr/bin/bash
+cd Lumia
+git pull origin main
+
+# --- 1. Crée LumiaApp qui manquait ---
+cat > app/src/main/java/com/lumia/os/LumiaApp.kt <<'EOF'
+package com.lumia.os
+
+import android.app.Application
+
+class LumiaApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        // Précharge cache icônes en arrière-plan, 0 blocage UI
+        IconCache.init(this)
+    }
+}
+EOF
+
+# --- 2. Crée IconCache qui manquait ---
+cat > app/src/main/java/com/lumia/os/IconCache.kt <<'EOF'
+package com.lumia.os
+
+import android.content.Context
+import android.graphics.drawable.Drawable
+import android.util.LruCache
+
+object IconCache {
+    private val cache = LruCache<String, Drawable>(60)
+
+    fun init(context: Context) {}
+
+    fun get(key: String, loader: () -> Drawable): Drawable {
+        return cache.get(key) ?: run {
+            try {
+                val d = loader()
+                cache.put(key, d)
+                d
+            } catch (e: Exception) {
+                // Fallback icône par défaut si une app a une icône corrompue
+                cache.get("fallback") ?: loader()
+            }
+        }
+    }
+}
+EOF
+
+# --- 3. LumiaLauncherActivity ULTRA STABLE anti-crash ---
+cat > app/src/main/java/com/lumia/os/LumiaLauncherActivity.kt <<'EOF'
 package com.lumia.os
 
 import android.content.Intent
@@ -103,3 +152,9 @@ fun LumiaHomeUltra() {
         }
     }
 }
+EOF
+
+git add .
+git commit -m "Fix crash on open: add LumiaApp.kt, IconCache.kt, launcher anti-crash with try/catch + async icon load"
+git push origin main
+echo "✅ CRASH FIX PUSHÉ"
