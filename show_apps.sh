@@ -1,3 +1,68 @@
+#!/data/data/com.termux/files/usr/bin/bash
+cd Lumia
+git pull origin main
+
+# --- Ajoute LAUNCHER à toutes les apps dans AndroidManifest.xml ---
+cat > app/src/main/AndroidManifest.xml <<'EOF'
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
+
+    <application
+        android:name=".LumiaApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Lumia"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+
+        <!-- LAUNCHER PRINCIPAL -->
+        <activity android:name=".LumiaLauncherActivity" android:exported="true" android:launchMode="singleTask" android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".control.LumiaControlActivity" android:exported="true" android:label="Lumia Control">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity>
+
+        <activity android:name=".gallery.GalleryActivity" android:exported="true" android:label="Lumia Gallery">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity>
+
+        <activity android:name=".files.FilesActivity" android:exported="true" android:label="Lumia Files">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity>
+
+        <activity android:name=".guard.GuardActivity" android:exported="true" android:label="Lumia Guard">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity>
+
+        <activity android:name=".lock.LockActivity" android:exported="true" android:label="Lumia Lock">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity>
+
+        <activity android:name=".feed.FeedActivity" android:exported="true" android:label="Lumia Feed">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity>
+
+        <service android:name=".keyboard.LumiaKeyboard" android:label="Lumia Keyboard" android:permission="android.permission.BIND_INPUT_METHOD" android:exported="true">
+            <intent-filter><action android:name="android.view.InputMethod" /></intent-filter>
+            <meta-data android:name="android.view.im" android:resource="@xml/method" />
+        </service>
+
+    </application>
+</manifest>
+EOF
+
+# --- Update Launcher pour mettre Lumia en haut ---
+cat > app/src/main/java/com/lumia/os/LumiaLauncherActivity.kt <<'EOF'
 package com.lumia.os
 
 import android.content.Intent
@@ -82,3 +147,9 @@ fun LumiaHomeUltra() {
         }
     }
 }
+EOF
+
+git add .
+git commit -m "Make all Lumia apps visible in launcher: add LAUNCHER intent + Lumia apps on top"
+git push origin main
+echo "✅ APPS VISIBLES PUSHÉ"
