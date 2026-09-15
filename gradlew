@@ -1,2 +1,2 @@
-#!/bin/bash
-gradle :app:assembleDebug
+#!/bin/sh
+exec gradle "$@"
