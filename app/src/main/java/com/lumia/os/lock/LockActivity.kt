@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,7 +23,7 @@ class LockActivity : ComponentActivity() {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(time, color = Color.White, fontSize = 72.sp)
                     Text("Lumia Lock - 0.3%/h", color = Color.Gray)
-                    Text("3 notifs max = pas de réveil CPU", color = Color.DarkGray)
+                    Text("AMOLED #000000 = pixels éteints", color = Color.DarkGray)
                 }
             }
         }

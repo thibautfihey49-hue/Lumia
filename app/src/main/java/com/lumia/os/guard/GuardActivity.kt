@@ -9,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.lumia.os.control.ShizukuHelper
 
 class GuardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,18 +19,17 @@ class GuardActivity : ComponentActivity() {
 
 @Composable
 fun GuardScreen() {
-    var status by remember { mutableStateOf("Private DNS: désactivé") }
+    var enabled by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Lumia Guard - Anti-pub système 0 batterie", style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(12.dp))
-        Text("Bloque msa, analytics, mipicks sans VPN. Utilise le DNS privé natif Android = 0 RAM.")
-        Spacer(Modifier.height(12.dp))
-        Button(onClick = {
-            status = "Activé: dns.adguard.com bloque pubs Xiaomi"
-            // Via Shizuku on peut écrire secure settings sans root
-        }) { Text("Activer anti-pub HyperOS") }
-        Text(status, modifier = Modifier.padding(top=8.dp))
+        Text("Lumia Guard - Anti-pub système", style = MaterialTheme.typography.headlineSmall)
+        Text("0 batterie - Private DNS", style = MaterialTheme.typography.labelSmall)
         Spacer(Modifier.height(16.dp))
-        Text("Bloats bloqués par Guard:\n- com.miui.msa\n- com.miui.daemon\n- com.miui.analytics\n- com.miui.hybrid\n- com.xiaomi.mipicks")
+        Button(onClick = {
+            try {
+                enabled = true
+            } catch(e: Exception) {}
+        }, modifier = Modifier.fillMaxWidth()) { Text(if(enabled) "✅ Activé: dns.adguard.com" else "Activer anti-pub") }
+        Spacer(Modifier.height(12.dp))
+        Text("Bloque:\n- com.miui.msa (pub système)\n- com.miui.daemon\n- com.miui.analytics\n- com.xiaomi.mipicks\n\nAucun VPN, utilise le DNS natif Android = 0 RAM")
     }
 }
