@@ -1,17 +1,15 @@
 package com.lumia.os
 
+import android.app.ActivityManager
+import android.content.Context
 import android.content.Intent
-import android.content.pm.ResolveInfo
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -21,8 +19,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -31,82 +27,141 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class LumiaLauncherActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { LumiaFluidTheme { LumiaFluidHome() } }
+        setContent {
+            MaterialTheme(colorScheme = darkColorScheme(background = Color.Black, surface = Color.Black, primary = Color(0xFF00FF88))) {
+                UltraLauncher()
+            }
+        }
     }
 }
 
 @Composable
-fun LumiaFluidTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = darkColorScheme(
-            background = Color(0xFF000000),
-            surface = Color(0xFF0A0A0A),
-            primary = Color(0xFF00FF88),
-            onBackground = Color.White
-        ),
-        content = content
-    )
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun LumiaFluidHome() {
+fun UltraLauncher() {
     val context = LocalContext.current
-    var apps by remember { mutableStateOf<List<ResolveInfo>>(emptyList()) }
+    val scope = rememberCoroutineScope()
+    var apps by remember { mutableStateOf<List<android.content.pm.ResolveInfo>>(emptyList()) }
     var query by remember { mutableStateOf("") }
+    var ram by remember { mutableStateOf("...") }
+    var ping by remember { mutableStateOf("-- ms") }
+
+    fun refreshRam() {
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val mem = ActivityManager.MemoryInfo()
+        am.getMemoryInfo(mem)
+        ram = "${mem.availMem / 1024 / 1024}MB libre"
+    }
+
+    fun boost() {
+        scope.launch(Dispatchers.IO) {
+            // 1. KILL ALL BACKGROUND - max perf Xiaomi
+            try {
+                val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                am.runningAppProcesses?.forEach {
+                    if (it.importance > 120) {
+                        try { am.killBackgroundProcesses(it.processName) } catch (_: Exception) {}
+                    }
+                }
+            } catch (_: Exception) {}
+            // 2. Ping test ultra rapide
+            val start = System.currentTimeMillis()
+            try { Runtime.getRuntime().exec("/system/bin/ping -c 1 -W 1 1.1.1.1").waitFor() } catch (_: Exception) {}
+            val ms = System.currentTimeMillis() - start
+            withContext(Dispatchers.Main) {
+                ping = "${ms}ms"
+                refreshRam()
+                Toast.makeText(context, "BOOSTED: ${ms}ms ping", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
+        refreshRam()
         withContext(Dispatchers.IO) {
             val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
             val list = context.packageManager.queryIntentActivities(intent, 0)
-                .sortedWith(compareBy({ !it.activityInfo.packageName.contains("lumia") }, { it.loadLabel(context.packageManager).toString().lowercase() }))
+                .sortedBy { it.loadLabel(context.packageManager).toString().lowercase() }
             apps = list
         }
+        // Ping auto au démarrage
+        scope.launch(Dispatchers.IO) {
+            val s = System.currentTimeMillis()
+            try { Runtime.getRuntime().exec("/system/bin/ping -c 1 -W 1 1.1.1.1").waitFor() } catch (_: Exception) {}
+            val ms = System.currentTimeMillis() - s
+            withContext(Dispatchers.Main) { ping = "${ms}ms" }
+        }
     }
-    val filtered by remember(apps, query) { derivedStateOf { if (query.isBlank()) apps else apps.filter { try { it.loadLabel(context.packageManager).toString().contains(query, true) } catch(_: Exception) { false } } } }
-    val dockApps = remember(filtered) { filtered.take(4) }
+
+    val filtered by remember(apps, query) {
+        derivedStateOf { if (query.isBlank()) apps else apps.filter { try { it.loadLabel(context.packageManager).toString().contains(query, true) } catch (_: Exception) { false } } }
+    }
+
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            Surface(Modifier.fillMaxWidth().padding(16.dp), RoundedCornerShape(24.dp), color = Color(0xFF1A1A1A)) {
-                OutlinedTextField(value = query, onValueChange = { query = it }, placeholder = { Text("Rechercher...", color = Color.Gray) }, modifier = Modifier.fillMaxWidth(), singleLine = true, colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent, focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedTextColor = Color.White, unfocusedTextColor = Color.White))
+            // TOP BAR ULTRA LEGER - RAM + PING + BOOST
+            Row(Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    Text(ram, color = Color(0xFF00FF88), fontSize = 11.sp)
+                    Text("PING $ping", color = if (ping.replace("ms","").toIntOrNull() ?: 999 < 80) Color(0xFF00FF88) else Color.Yellow, fontSize = 11.sp)
+                }
+                Row {
+                    Button(onClick = { boost() }, colors = ButtonDefaults.buttonColors(Color(0xFF00FF88), Color.Black), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp), shape = RoundedCornerShape(8.dp)) {
+                        Text("BOOST", fontSize = 12.sp)
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Button(onClick = {
+                        val pkgs = listOf("com.activision.callofduty.shooter", "com.garena.game.codm")
+                        pkgs.forEach { pkg ->
+                            try { context.packageManager.getLaunchIntentForPackage(pkg)?.let { context.startActivity(it); return@Button } } catch (_: Exception) {}
+                        }
+                        Toast.makeText(context, "COD non trouvé", Toast.LENGTH_SHORT).show()
+                    }, colors = ButtonDefaults.buttonColors(Color.White, Color.Black), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp), shape = RoundedCornerShape(8.dp)) {
+                        Text("COD", fontSize = 12.sp)
+                    }
+                }
             }
-            Text("${filtered.size} apps • Lumia 4.0 Fluid", color = Color.Gray, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 20.dp))
-            Spacer(Modifier.height(8.dp))
-            LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.weight(1f).padding(horizontal = 8.dp), contentPadding = PaddingValues(bottom = 100.dp)) {
-                items(filtered, key = { it.activityInfo.packageName + it.activityInfo.name }) { info -> FluidAppIcon(info) }
-            }
-        }
-        if (query.isBlank() && dockApps.isNotEmpty()) {
-            Surface(Modifier.align(Alignment.BottomCenter).padding(16.dp).fillMaxWidth(), RoundedCornerShape(28.dp), color = Color(0xCC1A1A1A), tonalElevation = 8.dp) {
-                Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) { dockApps.forEach { FluidAppIcon(it, true) } }
+
+            // SEARCH MINIMALISTE
+            OutlinedTextField(
+                value = query, onValueChange = { query = it },
+                placeholder = { Text("App...", fontSize = 12.sp, color = Color.Gray) },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).height(48.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF222222), unfocusedBorderColor = Color(0xFF111111), focusedContainerColor = Color(0xFF0A0A0A), unfocusedContainerColor = Color(0xFF0A0A0A), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+            )
+            Text("${filtered.size} apps", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(start = 12.dp, top = 4.dp))
+
+            // GRILLE ULTRA OPTIMISÉE - 5 colonnes pour plus de FPS (moins de scroll)
+            LazyVerticalGrid(columns = GridCells.Fixed(5), modifier = Modifier.weight(1f).padding(4.dp)) {
+                items(filtered, key = { it.activityInfo.packageName }) { info ->
+                    UltraApp(info)
+                }
             }
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FluidAppIcon(info: ResolveInfo, isDock: Boolean = false) {
+fun UltraApp(info: android.content.pm.ResolveInfo) {
     val context = LocalContext.current
-    val pm = context.packageManager
     var bitmap by remember(info.activityInfo.packageName) { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
-    val scale by animateFloatAsState(1f, tween(100), label = "scale")
     LaunchedEffect(info.activityInfo.packageName) {
         withContext(Dispatchers.IO) {
             try {
-                val drawable = IconCache.get(info.activityInfo.packageName) { info.loadIcon(pm) }
-                bitmap = drawable.toBitmap(96, 96).asImageBitmap()
-            } catch(_: Exception) {}
+                val d = info.loadIcon(context.packageManager)
+                bitmap = d.toBitmap(72, 72).asImageBitmap()
+            } catch (_: Exception) {}
         }
     }
-    Column(Modifier.padding(if(isDock) 4.dp else 8.dp).scale(scale).clip(RoundedCornerShape(16.dp)).combinedClickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { try { pm.getLaunchIntentForPackage(info.activityInfo.packageName)?.let { context.startActivity(it) } } catch(_: Exception) {} }, onLongClick = { try { val i = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS); i.data = android.net.Uri.parse("package:${info.activityInfo.packageName}"); context.startActivity(i) } catch(_: Exception) {} }), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.size(if (isDock) 52.dp else 56.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFF1A1A1A)), Alignment.Center) {
-            if (bitmap != null) Image(bitmap!!, null, Modifier.size(40.dp)) else Box(Modifier.size(40.dp))
-        }
-        if (!isDock) { Spacer(Modifier.height(4.dp)); Text(try { info.loadLabel(pm).toString() } catch(_: Exception) { "App" }, color = Color.White, fontSize = 10.sp, maxLines = 1, textAlign = TextAlign.Center, modifier = Modifier.width(64.dp)) }
+    Column(Modifier.padding(4.dp).clickable {
+        try { context.packageManager.getLaunchIntentForPackage(info.activityInfo.packageName)?.let { context.startActivity(it) } } catch (_: Exception) {}
+    }.width(64.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        if (bitmap != null) Image(bitmap!!, null, Modifier.size(48.dp)) else Box(Modifier.size(48.dp).background(Color(0xFF111111), RoundedCornerShape(10.dp)))
+        Text(try { info.loadLabel(context.packageManager).toString() } catch (_: Exception) { "" }, color = Color.White, fontSize = 8.sp, maxLines = 1, textAlign = TextAlign.Center, modifier = Modifier.width(60.dp))
     }
 }
