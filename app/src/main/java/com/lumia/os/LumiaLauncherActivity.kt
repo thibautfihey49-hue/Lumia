@@ -40,6 +40,8 @@ class LumiaLauncherActivity : ComponentActivity() {
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun LumiaFluidTheme(content: @Composable () -> Unit) {
     MaterialTheme(
@@ -56,6 +58,7 @@ fun LumiaFluidTheme(content: @Composable () -> Unit) {
 }
 
 @OptIn(ExperimentalFoundationApi::class)
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun LumiaFluidHome() {
     val context = LocalContext.current
@@ -149,6 +152,7 @@ fun LumiaFluidHome() {
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun FluidAppIcon(info: ResolveInfo, isDock: Boolean = false) {
     val context = LocalContext.current
